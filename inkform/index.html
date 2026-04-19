@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inkform — AI Tattoo Design Generator</title>
+  <meta name="description" content="Describe your tattoo idea. Get a professional design in seconds. Try it on your body before you commit." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink:        #0d0d0d;
+      --ink-2:      #2c2c2c;
+      --ink-3:      #5a5a5a;
+      --ink-4:      #9a9a9a;
+      --ink-5:      #c8c8c8;
+      --paper:      #f9f8f6;
+      --paper-2:    #f2f0eb;
+      --paper-3:    #e8e5de;
+      --white:      #ffffff;
+      --accent:     #0d0d0d;
+      --border:     rgba(13,13,13,0.09);
+      --border-2:   rgba(13,13,13,0.16);
+      --radius:     10px;
+      --radius-lg:  16px;
+      --radius-xl:  22px;
+      --display:    'Playfair Display', Georgia, serif;
+      --sans:       'Instrument Sans', sans-serif;
+      --shadow:     0 2px 16px rgba(13,13,13,0.06), 0 1px 3px rgba(13,13,13,0.04);
+      --shadow-lg:  0 8px 40px rgba(13,13,13,0.1), 0 2px 8px rgba(13,13,13,0.06);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Subtle grain */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: 0.35;
+    }
+
+    /* ── NAV ────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(249,248,246,0.9);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: var(--display); font-size: 21px; font-weight: 400;
+      letter-spacing: 0.02em; color: var(--ink); text-decoration: none;
+    }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a {
+      font-size: 13px; color: var(--ink-3); text-decoration: none;
+      letter-spacing: 0.02em; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-pill {
+      font-size: 13px; font-weight: 500;
+      background: var(--ink); color: var(--white) !important;
+      padding: 8px 20px; border-radius: 99px;
+      transition: background 0.2s !important;
+    }
+    .nav-pill:hover { background: var(--ink-2) !important; }
+
+    /* ── HERO ────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 120px 24px 60px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 500; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--ink-4);
+      border: 1px solid var(--border-2); border-radius: 99px;
+      padding: 5px 14px; margin-bottom: 28px;
+      opacity: 0; animation: fadeUp 0.7s ease forwards 0.1s;
+    }
+    .hero-title {
+      font-family: var(--display); font-size: clamp(44px, 7vw, 86px);
+      font-weight: 300; line-height: 1.06; letter-spacing: -0.015em;
+      color: var(--ink); max-width: 800px; margin-bottom: 18px;
+      opacity: 0; animation: fadeUp 0.7s ease forwards 0.25s;
+    }
+    .hero-title em { font-style: italic; color: var(--ink-3); font-weight: 300; }
+    .hero-sub {
+      font-size: 16px; font-weight: 300; color: var(--ink-3);
+      max-width: 440px; margin-bottom: 52px; line-height: 1.7;
+      opacity: 0; animation: fadeUp 0.7s ease forwards 0.4s;
+    }
+
+    /* ── GENERATOR BOX ────────────── */
+    .gen-wrap {
+      width: 100%; max-width: 640px;
+      opacity: 0; animation: fadeUp 0.7s ease forwards 0.55s;
+    }
+
+    /* Tabs */
+    .gen-tabs {
+      display: flex; gap: 0;
+      background: var(--paper-2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 3px; margin-bottom: 14px;
+    }
+    .gen-tab {
+      flex: 1; padding: 9px 16px; border: none; background: transparent;
+      font-family: var(--sans); font-size: 13px; font-weight: 400;
+      color: var(--ink-3); cursor: pointer; border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .gen-tab.active {
+      background: var(--white); color: var(--ink); font-weight: 500;
+      box-shadow: var(--shadow);
+    }
+
+    .gen-panel { display: none; }
+    .gen-panel.active { display: block; }
+
+    /* Prompt input */
+    .prompt-wrap {
+      background: var(--white); border: 1px solid var(--border-2);
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .prompt-wrap:focus-within {
+      border-color: var(--ink);
+      box-shadow: var(--shadow-lg);
+    }
+    .prompt-top {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 16px 16px 0 20px;
+    }
+    .prompt-textarea {
+      flex: 1; border: none; outline: none; resize: none;
+      font-family: var(--sans); font-size: 15px; font-weight: 300;
+      color: var(--ink); background: transparent; line-height: 1.6;
+      min-height: 72px; padding: 0;
+    }
+    .prompt-textarea::placeholder { color: var(--ink-5); }
+
+    .prompt-options {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      margin-top: 12px;
+    }
+    .prompt-select {
+      font-family: var(--sans); font-size: 12px; color: var(--ink-3);
+      background: var(--paper-2); border: 1px solid var(--border);
+      border-radius: 99px; padding: 5px 12px;
+      cursor: pointer; outline: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9a9a'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      padding-right: 26px;
+    }
+
+    .prompt-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 10px 10px 20px;
+    }
+    .tokens-badge {
+      font-size: 12px; color: var(--ink-4); display: flex;
+      align-items: center; gap: 5px;
+    }
+    .token-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+    .gen-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--ink); color: var(--white);
+      border: none; border-radius: var(--radius); padding: 11px 22px;
+      font-family: var(--sans); font-size: 13px; font-weight: 500;
+      letter-spacing: 0.03em; cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .gen-btn:hover { background: var(--ink-2); }
+    .gen-btn:active { transform: scale(0.98); }
+    .gen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .gen-btn svg { width: 14px; height: 14px; }
+
+    /* Style chips */
+    .chip-row {
+      display: flex; gap: 7px; flex-wrap: wrap;
+      justify-content: center; margin-top: 16px;
+    }
+    .chip {
+      font-size: 12px; padding: 5px 13px;
+      border: 1px solid var(--border-2); border-radius: 99px;
+      color: var(--ink-3); background: var(--white);
+      cursor: pointer; transition: all 0.15s; user-select: none;
+    }
+    .chip:hover { border-color: var(--ink); color: var(--ink); }
+    .chip.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+    .tokens-line {
+      font-size: 12px; color: var(--ink-4); margin-top: 13px; text-align: center;
+    }
+    .tokens-line strong { color: var(--ink-3); font-weight: 500; }
+
+    /* ── RESULTS ────────────────── */
+    .results-wrap {
+      width: 100%; max-width: 640px; margin-top: 32px;
+      display: none;
+    }
+    .results-wrap.visible { display: block; }
+
+    .results-label {
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ink-4); margin-bottom: 14px; text-align: center;
+    }
+    .results-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .result-card {
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); background: var(--white);
+      aspect-ratio: 1; position: relative; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .result-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .result-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .result-card .overlay {
+      position: absolute; inset: 0; background: rgba(13,13,13,0);
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; transition: background 0.2s;
+    }
+    .result-card:hover .overlay { background: rgba(13,13,13,0.45); }
+    .overlay-btn {
+      opacity: 0; transform: translateY(6px);
+      font-size: 12px; font-weight: 500; padding: 8px 14px;
+      border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.8);
+      color: white; background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(4px); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .result-card:hover .overlay-btn { opacity: 1; transform: translateY(0); }
+    .overlay-btn:nth-child(2) { transition-delay: 0.04s; }
+    .overlay-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* Loading cards */
+    .result-loading {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
+      height: 100%; padding: 20px;
+    }
+    .spinner {
+      width: 26px; height: 26px;
+      border: 1.5px solid var(--border);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    .loading-label { font-size: 11px; color: var(--ink-5); letter-spacing: 0.06em; }
+
+    .results-actions {
+      display: flex; gap: 10px; margin-top: 14px;
+    }
+    .action-btn {
+      flex: 1; padding: 11px; border-radius: var(--radius);
+      font-family: var(--sans); font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em;
+    }
+    .action-btn.ghost {
+      background: var(--white); border: 1px solid var(--border-2); color: var(--ink-3);
+    }
+    .action-btn.ghost:hover { border-color: var(--ink); color: var(--ink); }
+    .action-btn.solid {
+      background: var(--ink); border: 1px solid var(--ink); color: var(--white);
+    }
+    .action-btn.solid:hover { background: var(--ink-2); }
+
+    /* ── TRY-ON PANEL ────────────── */
+    .tryon-panel {
+      background: var(--white); border: 1px solid var(--border-2);
+      border-radius: var(--radius-lg); padding: 0; overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .tryon-steps {
+      display: flex; border-bottom: 1px solid var(--border);
+    }
+    .tryon-step {
+      flex: 1; padding: 14px 16px; text-align: center;
+      font-size: 12px; color: var(--ink-4); border-right: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .tryon-step:last-child { border-right: none; }
+    .tryon-step.done { color: var(--ink); }
+    .tryon-step .step-n {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--paper-2); color: var(--ink-4);
+      font-size: 11px; font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .tryon-step.done .step-n { background: var(--ink); color: var(--white); }
+
+    .tryon-body { padding: 24px; }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 1.5px dashed var(--border-2); border-radius: var(--radius);
+      padding: 40px 20px; text-align: center; cursor: pointer;
+      transition: all 0.2s; background: var(--paper);
+    }
+    .upload-zone:hover { border-color: var(--ink); background: var(--paper-2); }
+    .upload-zone.dragover { border-color: var(--ink); background: var(--paper-2); }
+    .upload-icon { font-size: 28px; margin-bottom: 12px; }
+    .upload-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .upload-sub { font-size: 12px; color: var(--ink-4); }
+    .upload-input { display: none; }
+
+    /* Canvas container */
+    .canvas-container {
+      position: relative; border-radius: var(--radius);
+      overflow: hidden; background: var(--paper-2);
+      border: 1px solid var(--border); display: none;
+      user-select: none;
+    }
+    .canvas-container.visible { display: block; }
+    #bodyCanvas { display: block; width: 100%; cursor: crosshair; }
+
+    /* Tattoo picker */
+    .tattoo-picker {
+      margin-top: 16px; display: none;
+    }
+    .tattoo-picker.visible { display: block; }
+    .tattoo-picker-label {
+      font-size: 12px; color: var(--ink-4); margin-bottom: 10px;
+      letter-spacing: 0.04em;
+    }
+    .tattoo-thumbs {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .tattoo-thumb {
+      width: 64px; height: 64px; border-radius: 8px;
+      border: 2px solid var(--border); background: var(--white);
+      overflow: hidden; cursor: pointer; transition: border-color 0.15s;
+      flex-shrink: 0;
+    }
+    .tattoo-thumb:hover { border-color: var(--ink-3); }
+    .tattoo-thumb.selected { border-color: var(--ink); }
+    .tattoo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .tattoo-thumb.empty {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: var(--ink-5); font-style: italic;
+    }
+
+    /* Controls */
+    .tryon-controls {
+      margin-top: 16px; display: none;
+    }
+    .tryon-controls.visible { display: block; }
+    .control-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .control-label { font-size: 12px; color: var(--ink-3); width: 60px; flex-shrink: 0; }
+    .control-slider {
+      flex: 1; height: 3px; accent-color: var(--ink); cursor: pointer;
+    }
+    .control-val { font-size: 12px; color: var(--ink-4); width: 36px; text-align: right; }
+
+    .tryon-hint {
+      font-size: 12px; color: var(--ink-4); text-align: center;
+      padding: 10px; background: var(--paper); border-radius: var(--radius);
+      margin-top: 12px;
+    }
+
+    .tryon-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    .tryon-token-note {
+      background: var(--paper-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 16px;
+      font-size: 12px; color: var(--ink-3); text-align: center;
+      margin-top: 14px;
+    }
+
+    /* ── SECTIONS ────────────────── */
+    .section { padding: 96px 48px; }
+    .section-tag {
+      font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--ink-4); margin-bottom: 48px; text-align: center;
+    }
+
+    /* How it works */
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 56px; max-width: 860px; margin: 0 auto;
+    }
+    .step { text-align: center; }
+    .step-n-lg {
+      font-family: var(--display); font-size: 56px; font-weight: 300;
+      color: var(--border-2); line-height: 1; margin-bottom: 18px;
+    }
+    .step-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+    .step-desc { font-size: 13px; color: var(--ink-3); line-height: 1.7; }
+
+    /* Styles grid */
+    .styles-section { background: var(--paper-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .styles-cards {
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      gap: 10px; max-width: 960px; margin: 0 auto;
+    }
+    .style-card {
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--white); aspect-ratio: 2/3;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      padding: 12px 8px; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden; position: relative;
+    }
+    .style-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .style-card-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent 40%, rgba(13,13,13,0.06) 100%);
+    }
+    .style-card-name {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+      text-align: center; color: var(--ink); position: relative;
+    }
+
+    /* Pricing */
+    .pricing-section { text-align: center; }
+    .pricing-title {
+      font-family: var(--display); font-size: 42px; font-weight: 300;
+      margin-bottom: 10px;
+    }
+    .pricing-sub { font-size: 15px; color: var(--ink-3); margin-bottom: 56px; }
+    .pricing-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 14px; max-width: 780px; margin: 0 auto;
+    }
+    .pricing-card {
+      border: 1px solid var(--border); border-radius: var(--radius-xl);
+      padding: 30px 24px; text-align: left; background: var(--white);
+      transition: box-shadow 0.2s;
+    }
+    .pricing-card:hover { box-shadow: var(--shadow-lg); }
+    .pricing-card.featured { background: var(--ink); border-color: var(--ink); color: var(--white); }
+    .plan-name { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 16px; }
+    .pricing-card.featured .plan-name { color: rgba(255,255,255,0.45); }
+    .plan-price { font-family: var(--display); font-size: 40px; font-weight: 300; margin-bottom: 2px; }
+    .plan-desc { font-size: 13px; color: var(--ink-3); margin-bottom: 24px; }
+    .pricing-card.featured .plan-desc { color: rgba(255,255,255,0.5); }
+    .plan-features { list-style: none; margin-bottom: 28px; }
+    .plan-features li {
+      font-size: 13px; color: var(--ink-3); padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 9px;
+    }
+    .pricing-card.featured .plan-features li { color: rgba(255,255,255,0.7); border-bottom-color: rgba(255,255,255,0.1); }
+    .plan-features li::before { content: '—'; color: var(--ink-5); flex-shrink: 0; }
+    .pricing-card.featured .plan-features li::before { color: rgba(255,255,255,0.3); }
+    .plan-badge { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; background: var(--white); color: var(--ink); padding: 2px 8px; border-radius: 99px; }
+    .plan-btn {
+      width: 100%; padding: 12px; border-radius: var(--radius);
+      font-family: var(--sans); font-size: 13px; font-weight: 500;
+      cursor: pointer; letter-spacing: 0.02em; transition: all 0.15s;
+    }
+    .plan-btn.outline { background: var(--white); border: 1px solid var(--border-2); color: var(--ink); }
+    .plan-btn.outline:hover { border-color: var(--ink); }
+    .plan-btn.wht { background: var(--white); border: 1px solid var(--white); color: var(--ink); }
+    .plan-btn.wht:hover { background: var(--paper); }
+
+    /* ── FOOTER ────────────────── */
+    footer {
+      padding: 36px 48px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-logo { font-family: var(--display); font-size: 17px; color: var(--ink); }
+    .footer-links { display: flex; gap: 22px; }
+    .footer-links a { font-size: 12px; color: var(--ink-4); text-decoration: none; transition: color 0.15s; }
+    .footer-links a:hover { color: var(--ink-3); }
+    .footer-copy { font-size: 12px; color: var(--ink-5); }
+
+    /* ── PAYWALL MODAL ────────────── */
+    .paywall-bg {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(13,13,13,0.55); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center; padding: 24px;
+    }
+    .paywall-bg.open { display: flex; }
+    .paywall-card {
+      background: var(--paper); border-radius: var(--radius-xl);
+      padding: 52px 44px; max-width: 440px; width: 100%;
+      text-align: center; box-shadow: 0 40px 100px rgba(13,13,13,0.2);
+      position: relative; animation: scaleIn 0.25s ease;
+    }
+    .paywall-x {
+      position: absolute; top: 16px; right: 16px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--paper-2); border: none; cursor: pointer;
+      font-size: 15px; color: var(--ink-3);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .paywall-x:hover { background: var(--paper-3); }
+    .paywall-glyph { font-size: 30px; margin-bottom: 18px; }
+    .paywall-title { font-family: var(--display); font-size: 30px; font-weight: 400; margin-bottom: 8px; }
+    .paywall-sub { font-size: 14px; color: var(--ink-3); margin-bottom: 36px; line-height: 1.65; }
+    .pack-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .pack {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 18px; border: 1px solid var(--border);
+      border-radius: var(--radius); cursor: pointer; text-align: left;
+      transition: all 0.15s; background: var(--white);
+    }
+    .pack:hover { border-color: var(--ink); }
+    .pack.featured { background: var(--ink); border-color: var(--ink); color: var(--white); }
+    .pack-name { font-size: 14px; font-weight: 500; }
+    .pack-qty { font-size: 12px; opacity: 0.55; margin-top: 2px; }
+    .pack-price { font-family: var(--display); font-size: 22px; font-weight: 400; }
+    .pack-feat-badge { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; background: var(--white); color: var(--ink); padding: 2px 7px; border-radius: 99px; margin-left: 7px; }
+    .paywall-note { font-size: 11px; color: var(--ink-5); }
+
+    /* ── ANIMATIONS ────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+
+    /* ── RESPONSIVE ────────────────── */
+    @media (max-width: 768px) {
+      nav { padding: 14px 18px; }
+      .nav-links { gap: 14px; }
+      .nav-links li:not(:last-child) { display: none; }
+      .hero { padding: 96px 18px 48px; }
+      .section { padding: 60px 18px; }
+      .steps-grid { grid-template-columns: 1fr; gap: 36px; }
+      .styles-section { padding: 60px 18px; }
+      .styles-cards { grid-template-columns: repeat(3, 1fr); }
+      .pricing-section { padding: 60px 18px; }
+      .pricing-cards { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 16px; text-align: center; padding: 28px 18px; }
+      .footer-links { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">Inkform</a>
+  <ul class="nav-links">
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#styles">Styles</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#" class="nav-pill">Get started free</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-tag">AI Tattoo Design Generator</span>
+  <h1 class="hero-title">Give form to<br><em>your ink idea</em></h1>
+  <p class="hero-sub">Describe any tattoo in plain words — styles, subject, placement. Get a professional design in seconds. Free to start.</p>
+
+  <!-- TABS -->
+  <div class="gen-wrap">
+    <div class="gen-tabs">
+      <button class="gen-tab active" onclick="switchTab('generate', this)">Design a tattoo</button>
+      <button class="gen-tab" onclick="switchTab('tryon', this)">Try it on ✦</button>
+    </div>
+
+    <!-- ── TAB: GENERATE ── -->
+    <div class="gen-panel active" id="tab-generate">
+      <div class="prompt-wrap">
+        <div class="prompt-top">
+          <textarea
+            class="prompt-textarea"
+            id="prompt-input"
+            placeholder="Describe your tattoo — subject, style, mood, details...&#10;e.g. a fine line snake coiled around a rose, delicate, forearm sized"
+            rows="3"
+          ></textarea>
+        </div>
+        <div class="prompt-options">
+          <select class="prompt-select" id="sel-style" onchange="syncChip(this.value)">
+            <option value="">Style</option>
+            <option>Fine line</option>
+            <option>Blackwork</option>
+            <option>Geometric</option>
+            <option>Japanese</option>
+            <option>Minimalist</option>
+            <option>Watercolour</option>
+            <option>Neo-trad</option>
+            <option>Realism</option>
+            <option>Dotwork</option>
+            <option>Tribal</option>
+            <option>Old school</option>
+            <option>Sketch</option>
+            <option>Ornamental</option>
+          </select>
+          <select class="prompt-select" id="sel-placement">
+            <option value="">Placement</option>
+            <option>Forearm</option>
+            <option>Upper arm</option>
+            <option>Wrist</option>
+            <option>Chest</option>
+            <option>Back</option>
+            <option>Shoulder</option>
+            <option>Calf</option>
+            <option>Ankle</option>
+            <option>Neck</option>
+            <option>Ribs</option>
+            <option>Hand</option>
+            <option>Finger</option>
+            <option>Sternum</option>
+            <option>Spine</option>
+          </select>
+          <select class="prompt-select" id="sel-size">
+            <option value="">Size</option>
+            <option>Tiny</option>
+            <option>Small</option>
+            <option>Medium</option>
+            <option>Large</option>
+            <option>Sleeve</option>
+          </select>
+          <select class="prompt-select" id="sel-count">
+            <option value="2">2 variations</option>
+            <option value="4">4 variations</option>
+          </select>
+        </div>
+        <div class="prompt-bottom">
+          <span class="tokens-badge">
+            <span class="token-dot"></span>
+            <span id="token-count">8</span> free designs left
+          </span>
+          <button class="gen-btn" id="gen-btn" onclick="handleGenerate()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1v14M1 8h14" stroke-linecap="round"/></svg>
+            Generate
+          </button>
+        </div>
+      </div>
+
+      <div class="chip-row" id="chip-row">
+        <span class="chip active" onclick="chipClick(this,'Fine line')">Fine line</span>
+        <span class="chip" onclick="chipClick(this,'Blackwork')">Blackwork</span>
+        <span class="chip" onclick="chipClick(this,'Geometric')">Geometric</span>
+        <span class="chip" onclick="chipClick(this,'Japanese')">Japanese</span>
+        <span class="chip" onclick="chipClick(this,'Minimalist')">Minimalist</span>
+        <span class="chip" onclick="chipClick(this,'Watercolour')">Watercolour</span>
+        <span class="chip" onclick="chipClick(this,'Neo-trad')">Neo-trad</span>
+        <span class="chip" onclick="chipClick(this,'Old school')">Old school</span>
+      </div>
+      <p class="tokens-line">No account needed &nbsp;·&nbsp; <strong id="token-count2">8</strong> free generations</p>
+    </div><!-- /tab-generate -->
+
+    <!-- ── TAB: TRY-ON ── -->
+    <div class="gen-panel" id="tab-tryon">
+      <div class="tryon-panel">
+        <div class="tryon-steps">
+          <div class="tryon-step" id="ts1"><span class="step-n">1</span> Upload photo</div>
+          <div class="tryon-step" id="ts2"><span class="step-n">2</span> Pick design</div>
+          <div class="tryon-step" id="ts3"><span class="step-n">3</span> Position it</div>
+        </div>
+        <div class="tryon-body">
+
+          <!-- Step 1: Upload -->
+          <div id="upload-step">
+            <div class="upload-zone" id="upload-zone"
+              onclick="document.getElementById('body-upload').click()"
+              ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+              <div class="upload-icon">📷</div>
+              <div class="upload-title">Upload a photo of yourself</div>
+              <div class="upload-sub">JPEG or PNG · any body part · stays private, never stored</div>
+            </div>
+            <input type="file" id="body-upload" class="upload-input" accept="image/jpeg,image/png" onchange="loadBodyPhoto(event)" />
+          </div>
+
+          <!-- Step 2: Canvas (hidden until photo loaded) -->
+          <div class="canvas-container" id="canvas-container">
+            <canvas id="bodyCanvas"></canvas>
+          </div>
+
+          <!-- Step 3: Pick tattoo -->
+          <div class="tattoo-picker" id="tattoo-picker">
+            <p class="tattoo-picker-label">Select a design to place:</p>
+            <div class="tattoo-thumbs" id="tattoo-thumbs">
+              <div class="tattoo-thumb empty">Generate designs first →</div>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="tryon-controls" id="tryon-controls">
+            <div class="control-row">
+              <span class="control-label">Size</span>
+              <input type="range" class="control-slider" id="ctrl-size" min="20" max="400" value="120" oninput="updateTattoo()">
+              <span class="control-val" id="ctrl-size-val">120</span>
+            </div>
+            <div class="control-row">
+              <span class="control-label">Opacity</span>
+              <input type="range" class="control-slider" id="ctrl-opacity" min="20" max="100" value="85" oninput="updateTattoo()">
+              <span class="control-val" id="ctrl-opacity-val">85%</span>
+            </div>
+            <div class="control-row">
+              <span class="control-label">Rotate</span>
+              <input type="range" class="control-slider" id="ctrl-rotate" min="-180" max="180" value="0" oninput="updateTattoo()">
+              <span class="control-val" id="ctrl-rotate-val">0°</span>
+            </div>
+            <p class="tryon-hint">Drag the tattoo to reposition it on your photo</p>
+            <div class="tryon-actions">
+              <button class="action-btn ghost" onclick="resetTryon()">Reset</button>
+              <button class="action-btn solid" onclick="saveTryon()">Save preview</button>
+            </div>
+          </div>
+
+          <div class="tryon-token-note">
+            ✦ Try-on costs <strong>1 token</strong> per tattoo placed · removes background automatically
+          </div>
+        </div>
+      </div>
+    </div><!-- /tab-tryon -->
+  </div><!-- /gen-wrap -->
+
+  <!-- RESULTS -->
+  <div class="results-wrap" id="results-wrap">
+    <p class="results-label">Your designs</p>
+    <div class="results-grid" id="results-grid"></div>
+    <div class="results-actions" id="results-actions" style="display:none;">
+      <button class="action-btn ghost" onclick="handleGenerate()">Regenerate</button>
+      <button class="action-btn ghost" onclick="switchTab('tryon', document.querySelectorAll('.gen-tab')[1])">Try on body →</button>
+      <button class="action-btn solid" onclick="downloadAll()">Download HD</button>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <p class="section-tag">How it works</p>
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-n-lg">01</div>
+      <div class="step-title">Describe your idea</div>
+      <div class="step-desc">Type in plain words — subject, style, placement, size, mood. The more detail, the closer to your vision.</div>
+    </div>
+    <div class="step">
+      <div class="step-n-lg">02</div>
+      <div class="step-title">AI generates concepts</div>
+      <div class="step-desc">Inkform's AI has been trained on professional tattoo art. It interprets your description precisely — not generically.</div>
+    </div>
+    <div class="step">
+      <div class="step-n-lg">03</div>
+      <div class="step-title">Try it on your body</div>
+      <div class="step-desc">Upload a photo of the placement area. Move, resize, and rotate the design on your actual skin before you commit.</div>
+    </div>
+  </div>
+</section>
+
+<!-- STYLES -->
+<section class="section styles-section" id="styles">
+  <p class="section-tag">Supported styles</p>
+  <div class="styles-cards">
+    <div class="style-card" onclick="applyStyle('Fine line')"><div class="style-card-bg"></div><p class="style-card-name">Fine line</p></div>
+    <div class="style-card" onclick="applyStyle('Blackwork')"><div class="style-card-bg"></div><p class="style-card-name">Blackwork</p></div>
+    <div class="style-card" onclick="applyStyle('Geometric')"><div class="style-card-bg"></div><p class="style-card-name">Geometric</p></div>
+    <div class="style-card" onclick="applyStyle('Japanese')"><div class="style-card-bg"></div><p class="style-card-name">Japanese</p></div>
+    <div class="style-card" onclick="applyStyle('Watercolour')"><div class="style-card-bg"></div><p class="style-card-name">Watercolour</p></div>
+    <div class="style-card" onclick="applyStyle('Neo-trad')"><div class="style-card-bg"></div><p class="style-card-name">Neo-trad</p></div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section pricing-section" id="pricing">
+  <p class="section-tag">Pricing</p>
+  <h2 class="pricing-title">Simple, transparent pricing</h2>
+  <p class="pricing-sub">Buy once. Tokens never expire. No subscriptions.</p>
+  <div class="pricing-cards">
+    <div class="pricing-card">
+      <p class="plan-name">Starter</p>
+      <p class="plan-price">$5</p>
+      <p class="plan-desc">50 designs</p>
+      <ul class="plan-features">
+        <li>50 generation credits</li>
+        <li>All styles</li>
+        <li>Standard resolution</li>
+        <li>10 try-on placements</li>
+      </ul>
+      <button class="plan-btn outline" onclick="openPack('starter')">Get Starter</button>
+    </div>
+    <div class="pricing-card featured">
+      <p class="plan-name">Creator &nbsp;<span class="plan-badge">Most popular</span></p>
+      <p class="plan-price">$12</p>
+      <p class="plan-desc">150 designs</p>
+      <ul class="plan-features">
+        <li>150 generation credits</li>
+        <li>All styles</li>
+        <li>High-res download</li>
+        <li>50 try-on placements</li>
+      </ul>
+      <button class="plan-btn wht" onclick="openPack('creator')">Get Creator</button>
+    </div>
+    <div class="pricing-card">
+      <p class="plan-name">Pro</p>
+      <p class="plan-price">$35</p>
+      <p class="plan-desc">500 designs</p>
+      <ul class="plan-features">
+        <li>500 generation credits</li>
+        <li>All styles</li>
+        <li>Ultra-HD + commercial licence</li>
+        <li>Unlimited try-on</li>
+      </ul>
+      <button class="plan-btn outline" onclick="openPack('pro')">Get Pro</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">Inkform</span>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+  </div>
+  <span class="footer-copy">© 2025 Inkform. All rights reserved.</span>
+</footer>
+
+<!-- PAYWALL MODAL -->
+<div class="paywall-bg" id="paywall" onclick="paywallBgClick(event)">
+  <div class="paywall-card">
+    <button class="paywall-x" onclick="closePaywall()">✕</button>
+    <p class="paywall-glyph">✦</p>
+    <h2 class="paywall-title">Free designs used</h2>
+    <p class="paywall-sub">You've used all 8 free generations. Pick a token pack to keep creating — no subscription, tokens never expire.</p>
+    <div class="pack-list">
+      <div class="pack" onclick="openPack('starter')">
+        <div><div class="pack-name">Starter</div><div class="pack-qty">50 designs + 10 try-ons</div></div>
+        <div class="pack-price">$5</div>
+      </div>
+      <div class="pack featured" onclick="openPack('creator')">
+        <div><div class="pack-name">Creator <span class="pack-feat-badge">Best value</span></div><div class="pack-qty">150 designs + 50 try-ons</div></div>
+        <div class="pack-price">$12</div>
+      </div>
+      <div class="pack" onclick="openPack('pro')">
+        <div><div class="pack-name">Pro</div><div class="pack-qty">500 designs + unlimited try-ons</div></div>
+        <div class="pack-price">$35</div>
+      </div>
+    </div>
+    <p class="paywall-note">Secure payment via Stripe · One-time purchase · Tokens never expire</p>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let tokensLeft = parseInt(localStorage.getItem('inkform_tokens') ?? '8');
+let selectedStyle = 'Fine line';
+let isGenerating = false;
+let generatedImages = []; // store URLs for try-on picker
+let currentTattooImg = null;
+let tattooPos = { x: 150, y: 150 };
+let dragging = false;
+let dragOffset = { x: 0, y: 0 };
+let bodyImg = null;
+const canvas = document.getElementById('bodyCanvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
+
+updateTokenDisplay();
+
+// ─────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.gen-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.gen-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+// CHIPS & STYLE SELECT
+// ─────────────────────────────────────────────
+function chipClick(el, style) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedStyle = style;
+  document.getElementById('sel-style').value = style;
+}
+
+function syncChip(style) {
+  selectedStyle = style;
+  document.querySelectorAll('.chip').forEach(c => {
+    c.classList.toggle('active', c.textContent.trim() === style);
+  });
+}
+
+function applyStyle(style) {
+  selectedStyle = style;
+  syncChip(style);
+  document.getElementById('sel-style').value = style;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => document.getElementById('prompt-input').focus(), 600);
+}
+
+// ─────────────────────────────────────────────
+// GENERATE
+// ─────────────────────────────────────────────
+async function handleGenerate() {
+  if (isGenerating) return;
+  const prompt = document.getElementById('prompt-input').value.trim();
+  if (!prompt) { document.getElementById('prompt-input').focus(); return; }
+  if (tokensLeft <= 0) { showPaywall(); return; }
+
+  const style     = document.getElementById('sel-style').value || selectedStyle;
+  const placement = document.getElementById('sel-placement').value;
+  const size      = document.getElementById('sel-size').value;
+  const count     = parseInt(document.getElementById('sel-count').value) || 2;
+
+  isGenerating = true;
+  tokensLeft = Math.max(0, tokensLeft - 1);
+  saveTokens();
+  updateTokenDisplay();
+  setGenBtn(true);
+
+  // Show loading cards
+  const grid = document.getElementById('results-grid');
+  const wrap = document.getElementById('results-wrap');
+  wrap.classList.add('visible');
+  document.getElementById('results-actions').style.display = 'none';
+  grid.innerHTML = Array(count).fill(0).map(() => `
+    <div class="result-card">
+      <div class="result-loading">
+        <div class="spinner"></div>
+        <p class="loading-label">Crafting design…</p>
+      </div>
+    </div>`).join('');
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, style, placement, size, count }),
+    });
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    generatedImages = data.images;
+
+    grid.innerHTML = '';
+    generatedImages.forEach((url, i) => {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.innerHTML = `
+        <img src="${url}" alt="Tattoo design ${i+1}" loading="lazy" />
+        <div class="overlay">
+          <button class="overlay-btn" onclick="downloadSingle('${url}',${i})">Download</button>
+          <button class="overlay-btn" onclick="sendToTryon('${url}')">Try on →</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+
+    document.getElementById('results-actions').style.display = 'flex';
+    populateTryonPicker();
+
+  } catch (err) {
+    grid.innerHTML = `<div class="result-card" style="grid-column:1/-1;aspect-ratio:2/1;">
+      <div class="result-loading"><p class="loading-label" style="color:#c00;">Generation failed — please try again</p></div>
+    </div>`;
+  }
+
+  isGenerating = false;
+  setGenBtn(false);
+  if (tokensLeft === 0) setTimeout(showPaywall, 2500);
+}
+
+function setGenBtn(loading) {
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = loading;
+  btn.innerHTML = loading
+    ? `<div class="spinner" style="width:14px;height:14px;border-width:1.5px;border-color:rgba(255,255,255,0.3);border-top-color:white;"></div> Generating…`
+    : `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M8 1v14M1 8h14" stroke-linecap="round"/></svg> Generate`;
+}
+
+// ─────────────────────────────────────────────
+// DOWNLOAD
+// ─────────────────────────────────────────────
+async function downloadSingle(url, i) {
+  if (tokensLeft <= 0) { showPaywall(); return; }
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inkform-design-${Date.now()}-${i+1}.png`;
+  a.click();
+}
+
+function downloadAll() {
+  if (tokensLeft <= 0) { showPaywall(); return; }
+  generatedImages.forEach((url, i) => setTimeout(() => downloadSingle(url, i), i * 300));
+}
+
+// ─────────────────────────────────────────────
+// TRY-ON FEATURE
+// ─────────────────────────────────────────────
+function populateTryonPicker() {
+  const container = document.getElementById('tattoo-thumbs');
+  if (!generatedImages.length) return;
+  container.innerHTML = generatedImages.map((url, i) => `
+    <div class="tattoo-thumb" onclick="selectTryonTattoo('${url}', this)">
+      <img src="${url}" alt="Design ${i+1}" />
+    </div>`).join('');
+  document.getElementById('tattoo-picker').classList.add('visible');
+}
+
+function sendToTryon(url) {
+  switchTab('tryon', document.querySelectorAll('.gen-tab')[1]);
+  populateTryonPicker();
+  setTimeout(() => {
+    const thumb = document.querySelector('.tattoo-thumb');
+    if (thumb) selectTryonTattoo(url, thumb);
+  }, 100);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Drag & drop upload
+function dragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('dragover');
+}
+function dragLeave(e) {
+  document.getElementById('upload-zone').classList.remove('dragover');
+}
+function dropFile(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processBodyPhoto(file);
+}
+
+function loadBodyPhoto(e) {
+  const file = e.target.files[0];
+  if (file) processBodyPhoto(file);
+}
+
+function processBodyPhoto(file) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      bodyImg = img;
+      // Fit canvas to image, max 580px wide
+      const maxW = Math.min(580, img.width);
+      const scale = maxW / img.width;
+      canvas.width  = maxW;
+      canvas.height = img.height * scale;
+      document.getElementById('canvas-container').classList.add('visible');
+      document.getElementById('upload-step').style.display = 'none';
+      document.getElementById('ts1').classList.add('done');
+      document.getElementById('tattoo-picker').classList.add('visible');
+      tattooPos = { x: canvas.width / 2, y: canvas.height / 2 };
+      drawCanvas();
+      if (generatedImages.length) populateTryonPicker();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// When user selects a tattoo design for try-on
+async function selectTryonTattoo(url, thumbEl) {
+  if (tokensLeft <= 0) { showPaywall(); return; }
+
+  document.querySelectorAll('.tattoo-thumb').forEach(t => t.classList.remove('selected'));
+  thumbEl.classList.add('selected');
+  document.getElementById('ts2').classList.add('done');
+
+  // Cost 1 token for try-on (bg removal)
+  tokensLeft = Math.max(0, tokensLeft - 1);
+  saveTokens();
+  updateTokenDisplay();
+
+  // Remove background via API to get transparent PNG
+  try {
+    const res = await fetch('/api/remove-bg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageUrl: url }),
+    });
+    const data = await res.json();
+    const transparentUrl = data.imageUrl || url;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      currentTattooImg = img;
+      document.getElementById('tryon-controls').classList.add('visible');
+      document.getElementById('ts3').classList.add('done');
+      setupCanvasDrag();
+      drawCanvas();
+    };
+    img.src = transparentUrl;
+  } catch (err) {
+    // Fallback: use original image without bg removal
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      currentTattooImg = img;
+      document.getElementById('tryon-controls').classList.add('visible');
+      setupCanvasDrag();
+      drawCanvas();
+    };
+    img.src = url;
+  }
+}
+
+// Canvas draw loop
+function drawCanvas() {
+  if (!ctx || !bodyImg) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw body photo
+  ctx.drawImage(bodyImg, 0, 0, canvas.width, canvas.height);
+
+  if (!currentTattooImg) return;
+
+  const size    = parseInt(document.getElementById('ctrl-size')?.value || 120);
+  const opacity = parseInt(document.getElementById('ctrl-opacity')?.value || 85) / 100;
+  const rotate  = parseInt(document.getElementById('ctrl-rotate')?.value || 0) * Math.PI / 180;
+
+  const aspect = currentTattooImg.width / currentTattooImg.height;
+  const w = size;
+  const h = size / aspect;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.translate(tattooPos.x, tattooPos.y);
+  ctx.rotate(rotate);
+  // Multiply blend mode to make white background invisible on skin
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.drawImage(currentTattooImg, -w/2, -h/2, w, h);
+  ctx.restore();
+
+  // Draw drag handle ring
+  ctx.save();
+  ctx.translate(tattooPos.x, tattooPos.y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(-w/2, -h/2, w, h);
+  ctx.restore();
+}
+
+function updateTattoo() {
+  document.getElementById('ctrl-size-val').textContent = document.getElementById('ctrl-size').value;
+  document.getElementById('ctrl-opacity-val').textContent = document.getElementById('ctrl-opacity').value + '%';
+  document.getElementById('ctrl-rotate-val').textContent = document.getElementById('ctrl-rotate').value + '°';
+  drawCanvas();
+}
+
+// Canvas drag
+function setupCanvasDrag() {
+  canvas.style.cursor = 'grab';
+
+  canvas.onmousedown = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    dragging = true;
+    dragOffset = { x: mx - tattooPos.x, y: my - tattooPos.y };
+    canvas.style.cursor = 'grabbing';
+  };
+  canvas.onmousemove = (e) => {
+    if (!dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    tattooPos.x = (e.clientX - rect.left) * scaleX - dragOffset.x;
+    tattooPos.y = (e.clientY - rect.top) * scaleY - dragOffset.y;
+    drawCanvas();
+  };
+  canvas.onmouseup = () => { dragging = false; canvas.style.cursor = 'grab'; };
+  canvas.onmouseleave = () => { dragging = false; canvas.style.cursor = 'grab'; };
+
+  // Touch support
+  canvas.ontouchstart = (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    dragging = true;
+    dragOffset = {
+      x: (t.clientX - rect.left) * scaleX - tattooPos.x,
+      y: (t.clientY - rect.top) * scaleY - tattooPos.y,
+    };
+  };
+  canvas.ontouchmove = (e) => {
+    e.preventDefault();
+    if (!dragging) return;
+    const t = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    tattooPos.x = (t.clientX - rect.left) * scaleX - dragOffset.x;
+    tattooPos.y = (t.clientY - rect.top) * scaleY - dragOffset.y;
+    drawCanvas();
+  };
+  canvas.ontouchend = () => { dragging = false; };
+}
+
+function resetTryon() {
+  currentTattooImg = null;
+  tattooPos = { x: canvas.width / 2, y: canvas.height / 2 };
+  document.getElementById('ctrl-size').value = 120;
+  document.getElementById('ctrl-opacity').value = 85;
+  document.getElementById('ctrl-rotate').value = 0;
+  updateTattoo();
+  document.querySelectorAll('.tattoo-thumb').forEach(t => t.classList.remove('selected'));
+  ['ts2','ts3'].forEach(id => document.getElementById(id).classList.remove('done'));
+  document.getElementById('tryon-controls').classList.remove('visible');
+  drawCanvas();
+}
+
+function saveTryon() {
+  const link = document.createElement('a');
+  link.download = `inkform-tryon-${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ─────────────────────────────────────────────
+// TOKENS & PAYWALL
+// ─────────────────────────────────────────────
+function updateTokenDisplay() {
+  document.getElementById('token-count').textContent = tokensLeft;
+  document.getElementById('token-count2').textContent = tokensLeft;
+  const dot = document.querySelector('.token-dot');
+  if (dot) dot.style.background = tokensLeft > 3 ? '#22c55e' : tokensLeft > 0 ? '#f59e0b' : '#ef4444';
+}
+
+function saveTokens() {
+  localStorage.setItem('inkform_tokens', tokensLeft);
+}
+
+function showPaywall() {
+  document.getElementById('paywall').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closePaywall() {
+  document.getElementById('paywall').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function paywallBgClick(e) {
+  if (e.target === document.getElementById('paywall')) closePaywall();
+}
+function openPack(pack) {
+  const links = {
+    starter: 'https://buy.stripe.com/YOUR_STARTER_LINK',
+    creator: 'https://buy.stripe.com/YOUR_CREATOR_LINK',
+    pro:     'https://buy.stripe.com/YOUR_PRO_LINK',
+  };
+  window.location.href = links[pack];
+}
+
+// ─────────────────────────────────────────────
+// KEYBOARD
+// ─────────────────────────────────────────────
+document.getElementById('prompt-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate();
+});
+
+// Enter = submit hint
+document.getElementById('prompt-input').addEventListener('input', () => {
+  const hint = document.querySelector('.tokens-line');
+  if (hint) hint.textContent = '⌘ Enter to generate · ' + tokensLeft + ' free designs left';
+});
+</script>
+</body>
+</html>
