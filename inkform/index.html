@@ -876,7 +876,15 @@ let dragOffset = { x: 0, y: 0 };
 let bodyImg = null;
 const canvas = document.getElementById('bodyCanvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
+function updateTokenDisplay() {
+  const el1 = document.getElementById('token-count');
+  const el2 = document.getElementById('token-count2');
+  if (el1) el1.textContent = tokensLeft;
+  if (el2) el2.textContent = tokensLeft;
 
+  const dot = document.querySelector('.token-dot');
+  if (dot) dot.style.background = tokensLeft > 0 ? '#22c55e' : '#ef4444';
+}
 updateTokenDisplay();
 
 // ─────────────────────────────────────────────
@@ -918,6 +926,9 @@ function applyStyle(style) {
 // GENERATE
 // ─────────────────────────────────────────────
 async function handleGenerate() {
+  function saveTokens() {
+  localStorage.setItem('inkform_tokens', tokensLeft);
+}
   if (isGenerating) return;
   const prompt = document.getElementById('prompt-input').value.trim();
   if (!prompt) { document.getElementById('prompt-input').focus(); return; }
